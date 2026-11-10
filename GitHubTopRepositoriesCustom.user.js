@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GitHub Top repositories 自定义
 // @namespace    https://github.com/mojie126/GitHubTopRepositoriesCustom
-// @version      2.4.0
+// @version      2.4.1
 // @description  自定义 GitHub 首页左侧 Top repositories 的仓库和排序，并支持搜索
 // @author       mojie126
 // @match        https://github.com/*
@@ -569,6 +569,9 @@
         }
       }
     }
+    if (!source) {
+      source = nativeRowCache.values().next().value;
+    }
     const item = source ? source.cloneNode(true) : createElement('li', 'public source');
     if (!source) {
       item.append(createElement('div', 'width-full d-flex mt-2'));
@@ -597,6 +600,22 @@
       title.append(document.createTextNode(name));
       titleContainer.append(title);
       body.append(titleContainer);
+    } else {
+      for (const link of item.querySelectorAll('a[data-hovercard-type="repository"][href]')) {
+        link.href = `/${repository}`;
+        link.setAttribute('data-hovercard-url', `/${repository}/hovercard`);
+      }
+      const image = item.querySelector('img');
+      if (image) {
+        image.src = `https://avatars.githubusercontent.com/${repository.split('/')[0]}?s=16&v=4`;
+        image.alt = repository.split('/')[1];
+      }
+      const textLinks = [...item.querySelectorAll('a[data-hovercard-type="repository"][href]')];
+      const title = textLinks.find((link) => link.textContent.trim());
+      if (title) {
+        const [owner, name] = repository.split('/');
+        title.replaceChildren(document.createTextNode(owner), createElement('span', 'color-fg-muted', '/'), document.createTextNode(name));
+      }
     }
     const remove = createElement('button', '', '×');
     remove.type = 'button';
