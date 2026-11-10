@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GitHub Top repositories 自定义
 // @namespace    https://github.com/mojie126/GitHubTopRepositoriesCustom
-// @version      2.4.1
+// @version      2.5.2
 // @description  自定义 GitHub 首页左侧 Top repositories 的仓库和排序，并支持搜索
 // @author       mojie126
 // @match        https://github.com/*
@@ -304,6 +304,22 @@
     const style = createElement('style');
     style.id = STYLE_ID;
     style.textContent = `
+      .js-header-wrapper {
+        position: sticky !important;
+        top: 0 !important;
+        z-index: 999 !important;
+      }
+      aside.feed-left-sidebar {
+        position: sticky !important;
+        top: 64px !important;
+        align-self: flex-start !important;
+        height: calc(100vh - 64px) !important;
+        overflow: hidden !important;
+      }
+      aside.feed-left-sidebar .dashboard-sidebar,
+      aside.feed-left-sidebar .js-left-column-scroll-container {
+        height: 100% !important;
+      }
       [${CARD_ATTRIBUTE}="true"] ${SEARCH_SELECTOR} {
         width: 100%;
       }
@@ -389,10 +405,12 @@
         background: var(--button-default-bgColor-hover, #30363d);
       }
       [${EDITOR_ATTRIBUTE}] .gh-trc-editor-error {
-        min-height: 17px;
         margin-top: 5px;
         color: var(--fgColor-danger, #f85149);
         font-size: 12px;
+      }
+      [${EDITOR_ATTRIBUTE}] .gh-trc-editor-error:empty {
+        display: none;
       }
       [${CARD_ATTRIBUTE}="true"] [data-gh-top-repositories-list] {
         display: block;
@@ -465,7 +483,7 @@
       }
       [${CARD_ATTRIBUTE}="true"] [data-gh-top-repositories-actions] {
         display: block;
-        margin-top: 5px;
+        margin-top: 0;
       }
       [${CARD_ATTRIBUTE}="true"] [data-gh-top-repositories-actions] > button {
         margin-right: 6px;
@@ -480,6 +498,24 @@
         font: inherit;
         font-size: 12px;
         cursor: pointer;
+      }
+      [${CARD_ATTRIBUTE}="true"] [data-gh-top-repositories-add] {
+        flex: none;
+        margin-left: auto;
+        margin-right: 6px;
+        min-height: 26px;
+        padding: 2px 8px;
+        border: 1px solid var(--borderColor-default, #30363d);
+        border-radius: 6px;
+        background: transparent;
+        color: var(--fgColor-muted, #8c959f);
+        font: inherit;
+        font-size: 12px;
+        cursor: pointer;
+      }
+      [${CARD_ATTRIBUTE}="true"] [data-gh-top-repositories-add]:hover {
+        color: var(--fgColor-default, #e6edf3);
+        background: var(--button-default-bgColor-hover, #30363d);
       }
       [${CARD_ATTRIBUTE}="true"] [data-gh-top-repositories-actions] button:hover {
         color: var(--fgColor-default, #e6edf3);
@@ -1008,12 +1044,24 @@
     let editor = actions.querySelector(`[${EDITOR_ATTRIBUTE}]`);
     if (!editor) {
       editor = createEditor();
-      actions.replaceChildren(add, editor);
-    } else if (!actions.contains(add)) {
-      actions.prepend(add);
+      actions.append(editor);
     }
-    if (actions.previousElementSibling !== list) {
-      list.insertAdjacentElement('afterend', actions);
+    const headingRow = document.getElementById('dashboard-top-repositories-heading')?.closest('div');
+    if (headingRow) {
+      const nativeButton = headingRow.querySelector('a[href="/new"], a[href^="https://github.com/new"]');
+      if (nativeButton) {
+        nativeButton.insertAdjacentElement('beforebegin', add);
+      } else {
+        headingRow.append(add);
+      }
+      headingRow.insertAdjacentElement('afterend', actions);
+    } else {
+      if (!actions.contains(add)) {
+        actions.prepend(add);
+      }
+      if (actions.previousElementSibling !== list) {
+        list.insertAdjacentElement('afterend', actions);
+      }
     }
     bindCard(card);
     renderCard(card);
