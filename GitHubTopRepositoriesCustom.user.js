@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GitHub Top repositories 自定义
 // @namespace    https://github.com/mojie126/GitHubTopRepositoriesCustom
-// @version      2.3.2
+// @version      2.4.0
 // @description  自定义 GitHub 首页左侧 Top repositories 的仓库和排序，并支持搜索
 // @author       mojie126
 // @match        https://github.com/*
@@ -32,6 +32,8 @@
   const ACTIONS_ATTRIBUTE = 'data-gh-top-repositories-actions';
   const SEARCH_WRAPPER_ATTRIBUTE = 'data-gh-top-repositories-search-wrapper';
   const SEARCH_CLEAR_ATTRIBUTE = 'data-gh-top-repositories-search-clear';
+  const DROP_INDICATOR_ATTRIBUTE = 'data-gh-top-repositories-drop-indicator';
+  const DROP_MARKER_ATTRIBUTE = 'data-gh-top-repositories-drop-marker';
   const VISIBLE_LIMIT = 7;
   let repositoryState = null;
   let lastRepositorySignature = '';
@@ -491,6 +493,33 @@
       [${CARD_ATTRIBUTE}="true"] .gh-trc-dragging {
         opacity: 0.45;
       }
+      [${DROP_MARKER_ATTRIBUTE}="true"] {
+        background: rgba(56, 139, 253, 0.12) !important;
+        box-shadow: 0 2px 0 0 #388bfd, 0 -2px 0 0 #388bfd !important;
+      }
+      [${CARD_ATTRIBUTE}="true"] [${DROP_INDICATOR_ATTRIBUTE}] {
+        position: absolute;
+        z-index: 20;
+        top: 0;
+        left: 0;
+        display: none;
+        padding: 5px 10px;
+        border: 1px solid #388bfd;
+        border-radius: 8px;
+        background: var(--bgColor-muted, #161b22);
+        color: var(--fgColor-default, #e6edf3);
+        font-size: 12px;
+        font-weight: 600;
+        white-space: nowrap;
+        pointer-events: none;
+        box-shadow: 0 8px 24px rgba(1, 4, 9, 0.35);
+      }
+      [${DROP_INDICATOR_ATTRIBUTE}][data-visible="true"] {
+        display: block;
+      }
+      [${DROP_INDICATOR_ATTRIBUTE}] strong {
+        color: #58a6ff;
+      }
     `;
     document.documentElement.appendChild(style);
   }
@@ -730,6 +759,38 @@
    * @param card 卡片元素
    */
   function bindCard(card) {
+    function clearDropMarker(list) {
+      list.querySelectorAll(`[${DROP_MARKER_ATTRIBUTE}="true"]`).forEach((element) => {
+        element.removeAttribute(DROP_MARKER_ATTRIBUTE);
+      });
+      const indicator = card.querySelector(`[${DROP_INDICATOR_ATTRIBUTE}]`);
+      if (indicator) {
+        indicator.dataset.visible = 'false';
+        indicator.hidden = true;
+      }
+    }
+
+    function updateDropMarker(list, target) {
+      clearDropMarker(list);
+      if (!target) {
+        return;
+      }
+      target.setAttribute(DROP_MARKER_ATTRIBUTE, 'true');
+      const indicator = card.querySelector(`[${DROP_INDICATOR_ATTRIBUTE}]`);
+      if (!indicator) {
+        return;
+      }
+      const items = [...list.querySelectorAll('[data-gh-top-repositories-item]')];
+      const position = items.indexOf(target) + 1;
+      indicator.replaceChildren(document.createTextNode('放到第 '), createElement('strong', '', String(position)), document.createTextNode(' 位'));
+      const cardRect = card.getBoundingClientRect();
+      const targetRect = target.getBoundingClientRect();
+      indicator.hidden = false;
+      indicator.dataset.visible = 'true';
+      indicator.style.left = `${Math.max(0, targetRect.left - cardRect.left + 18)}px`;
+      indicator.style.top = `${Math.max(0, targetRect.top - cardRect.top + 2)}px`;
+    }
+
     const search = card.querySelector('#dashboard-repos-filter-left')
       || card.querySelector(SEARCH_SELECTOR);
     if (search && !search.parentElement?.hasAttribute(SEARCH_WRAPPER_ATTRIBUTE)) {
@@ -789,6 +850,12 @@
     const list = card.querySelector('[data-gh-top-repositories-list]');
     if (list && list.dataset.ghTopRepositoriesDragBound !== 'true') {
       list.dataset.ghTopRepositoriesDragBound = 'true';
+      if (!card.querySelector(`[${DROP_INDICATOR_ATTRIBUTE}]`)) {
+        const indicator = createElement('div');
+        indicator.setAttribute(DROP_INDICATOR_ATTRIBUTE, '');
+        indicator.hidden = true;
+        card.append(indicator);
+      }
       list.addEventListener('dragstart', (event) => {
         const item = event.target.closest('[data-gh-top-repositories-item]');
         if (!item) {
@@ -800,10 +867,18 @@
       });
       list.addEventListener('dragend', (event) => {
         event.target.closest('[data-gh-top-repositories-item]')?.classList.remove('gh-trc-dragging');
+        clearDropMarker(list);
       });
       list.addEventListener('dragover', (event) => {
-        if (event.target.closest('[data-gh-top-repositories-item]')) {
+        const target = event.target.closest('[data-gh-top-repositories-item]');
+        if (target) {
           event.preventDefault();
+          updateDropMarker(list, target);
+        }
+      });
+      list.addEventListener('dragleave', (event) => {
+        if (!list.contains(event.relatedTarget)) {
+          clearDropMarker(list);
         }
       });
       list.addEventListener('drop', (event) => {
@@ -812,6 +887,7 @@
           return;
         }
         event.preventDefault();
+        clearDropMarker(list);
         const repositories = loadRepositories().slice();
         const source = event.dataTransfer.getData('application/x-gh-top-repositories');
         const targetRepository = target.dataset.repository;
