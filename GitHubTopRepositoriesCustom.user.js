@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GitHub Top repositories 自定义
 // @namespace    https://github.com/mojie126/GitHubTopRepositoriesCustom
-// @version      2.3.0
+// @version      2.3.2
 // @description  自定义 GitHub 首页左侧 Top repositories 的仓库和排序，并支持搜索
 // @author       mojie126
 // @match        https://github.com/*
@@ -21,6 +21,7 @@
   const INITIALIZED_KEY = 'github-top-repositories-initialized-v2';
   const LEGACY_INITIALIZED_KEY = 'github-top-repositories-initialized-v1';
   const SEARCH_KEY = 'github-top-repositories-search-v2';
+  const ROW_TEMPLATES_KEY = 'github-top-repositories-row-templates-v1';
   const SEARCH_SELECTOR = 'input[placeholder*="Find a repository" i], input[aria-label*="Find a repository" i]';
   const NATIVE_LIST_SELECTOR = 'ul.js-dashboard-repos-list';
   const NATIVE_ROW_SELECTOR = 'ul.js-dashboard-repos-list > li';
@@ -204,6 +205,31 @@
       GM_setValue(SEARCH_KEY, String(query || '').trim());
     } catch {
       // 搜索条件无法保存时保留当前界面状态
+    }
+  }
+
+  /**
+   * @brief 读取缓存的仓库行模板
+   * @return 仓库全名到行模板的映射
+   */
+  function loadRowTemplates() {
+    try {
+      const stored = GM_getValue(ROW_TEMPLATES_KEY, {});
+      return stored && typeof stored === 'object' && !Array.isArray(stored) ? stored : {};
+    } catch {
+      return {};
+    }
+  }
+
+  /**
+   * @brief 保存缓存的仓库行模板
+   * @param templates 仓库全名到行模板的映射
+   */
+  function saveRowTemplates(templates) {
+    try {
+      GM_setValue(ROW_TEMPLATES_KEY, templates);
+    } catch {
+      // 行模板无法保存时仍使用完整回退行
     }
   }
 
@@ -499,7 +525,21 @@
    * @return 条目元素
    */
   function createRepositoryItem(repository) {
-    const source = nativeRowCache.get(repository);
+    let source = nativeRowCache.get(repository);
+    if (!source) {
+      const template = loadRowTemplates()[repository];
+      if (typeof template === 'string') {
+        const parser = new DOMParser();
+        const parsed = parser.parseFromString(template, 'text/html');
+        const parsedRow = parsed.body.firstElementChild;
+        if (parsedRow instanceof HTMLElement) {
+          source = parsedRow;
+          nativeRowCache.set(repository, source);
+        } else {
+          source = null;
+        }
+      }
+    }
     const item = source ? source.cloneNode(true) : createElement('li', 'public source');
     if (!source) {
       item.append(createElement('div', 'width-full d-flex mt-2'));
@@ -515,8 +555,19 @@
     const drag = createElement('span', 'gh-trc-drag', '⠿');
     drag.setAttribute('aria-hidden', 'true');
     item.prepend(drag);
-    if (!body.querySelector('a[data-hovercard-type="repository"]')) {
+    if (!source) {
       body.append(createRepositoryLink(repository));
+      const titleContainer = createElement('div', 'wb-break-word');
+      const title = createElement('a', 'color-fg-default lh-0 mb-2 markdown-title');
+      title.href = `/${repository}`;
+      title.setAttribute('data-hovercard-type', 'repository');
+      title.setAttribute('data-hovercard-url', `/${repository}/hovercard`);
+      const [owner, name] = repository.split('/');
+      title.append(document.createTextNode(owner));
+      title.append(createElement('span', 'color-fg-muted', '/'));
+      title.append(document.createTextNode(name));
+      titleContainer.append(title);
+      body.append(titleContainer);
     }
     const remove = createElement('button', '', '×');
     remove.type = 'button';
@@ -594,12 +645,19 @@
     const nativeList = card.querySelector(`${NATIVE_LIST_SELECTOR}:not([data-gh-top-repositories-list])`);
     if (nativeList) {
       nativeList.hidden = true;
-      for (const row of nativeList.querySelectorAll('a[data-hovercard-type="repository"][href]')) {
-        const repository = normalizeRepository(row.getAttribute('href') || '');
-        const li = row.closest('li');
-        if (repository && li && !nativeRowCache.has(repository)) {
-          nativeRowCache.set(repository, li.cloneNode(true));
+      const templates = loadRowTemplates();
+      let templatesChanged = false;
+      for (const row of nativeList.querySelectorAll('li')) {
+        const link = row.querySelector('a[data-hovercard-type="repository"][href]');
+        const repository = normalizeRepository(link?.getAttribute('href') || '');
+        if (repository && !nativeRowCache.has(repository)) {
+          nativeRowCache.set(repository, row.cloneNode(true));
+          templates[repository] = row.outerHTML;
+          templatesChanged = true;
         }
+      }
+      if (templatesChanged) {
+        saveRowTemplates(templates);
       }
     }
     const expanded = true;
@@ -801,15 +859,19 @@
       markInitialized();
     }
     const nativeList = card.querySelector(`${NATIVE_LIST_SELECTOR}:not([data-gh-top-repositories-list])`);
-    const nativeLinks = nativeList
-      ? [...nativeList.querySelectorAll('a[data-hovercard-type="repository"][href]')]
-      : [];
-    for (const link of nativeLinks) {
-      const repository = normalizeRepository(link.getAttribute('href') || '');
-      const row = link.closest('li');
-      if (repository && row && !nativeRowCache.has(repository)) {
+    const templates = loadRowTemplates();
+    let templatesChanged = false;
+    for (const row of nativeList?.querySelectorAll('li') || []) {
+      const link = row.querySelector('a[data-hovercard-type="repository"][href]');
+      const repository = normalizeRepository(link?.getAttribute('href') || '');
+      if (repository && !nativeRowCache.has(repository)) {
         nativeRowCache.set(repository, row.cloneNode(true));
+        templates[repository] = row.outerHTML;
+        templatesChanged = true;
       }
+    }
+    if (templatesChanged) {
+      saveRowTemplates(templates);
     }
     let list = card.querySelector('[data-gh-top-repositories-list]');
     if (!list) {
