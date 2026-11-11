@@ -23,12 +23,12 @@
 
 ## 安装
 
-1. 在浏览器中安装 [Tampermonkey](https://www.tampermonkey.net/)。
-2. 在 Tampermonkey 控制面板中新建用户脚本，或编辑已有脚本。
-3. 把 [GitHubTopRepositoriesCustom.user.js](./GitHubTopRepositoriesCustom.user.js) 的全部内容复制到编辑器中并保存。
-4. 打开或刷新 [GitHub 首页](https://github.com/)。
+1. 在浏览器中安装 [Tampermonkey](https://www.tampermonkey.net/)（篡改猴）。
+2. 打开 [GitHubTopRepositoriesCustom.user.js](./GitHubTopRepositoriesCustom.user.js) 文件页面。
+3. 点击文件页面中的 `Raw`，打开以 `.user.js` 结尾的原始文件地址，浏览器已安装 Tampermonkey 时会自动触发脚本安装流程并显示安装页面。
+4. 确认脚本内容后点击“安装”，再打开或刷新 [GitHub 首页](https://github.com/)。
 
-GitHub 原站点中的 `.user.js` 文件不会直接触发安装，复制源码到 Tampermonkey 是最稳定的安装方式。
+也可以手动安装：在 Tampermonkey 控制面板中新建用户脚本，把 [GitHubTopRepositoriesCustom.user.js](./GitHubTopRepositoriesCustom.user.js) 的全部内容复制到编辑器中并保存，再刷新 GitHub 首页。点击文件名仅查看源码，不会触发安装，未安装 Tampermonkey 时点击 `Raw` 只会显示脚本文本。
 
 ## 使用方法
 
@@ -73,7 +73,7 @@ github.com/mojie126/AssRocket
 
 ## 版本更新
 
-如果已经在 Tampermonkey 中安装旧版，安装新版本时必须覆盖原脚本内容，而不是在页面里直接打开仓库中的脚本文件。更新后确认脚本版本为 2.5.2，再刷新 GitHub 首页。
+如果已经在 Tampermonkey 中安装旧版，可以打开脚本文件页面点击 `Raw`，按安装页面提示完成更新，也可以将最新版本源码覆盖到原脚本中。更新后确认脚本版本为 2.5.2，再刷新 GitHub 首页。
 
 安装后可看到以下变化：
 
@@ -103,7 +103,7 @@ github.com/mojie126/AssRocket
 5. 如果顶部导航未固定，确认脚本版本为 `2.5.2` 或更高
 6. 提交问题时附上浏览器版本、脚本版本、页面截图和浏览器控制台错误
 
-如果添加按钮没有响应、官方更多中的仓库与初始项目样式不一致、拖拽时没有目标位置提示、搜索框无法清空、搜索后出现重复操作区、删除按钮不可见或顶部导航未固定，请确认脚本版本为 2.5.2 或更高，重新复制当前源码并刷新页面。
+如果添加按钮没有响应、官方更多中的仓库与初始项目样式不一致、拖拽时没有目标位置提示、搜索框无法清空、搜索后出现重复操作区、删除按钮不可见或顶部导航未固定，请确认脚本版本为 2.5.2 或更高，重新点击 `Raw` 按提示安装或更新，或复制当前源码覆盖后刷新页面。
 
 ## 项目文件
 
@@ -111,4 +111,4 @@ github.com/mojie126/AssRocket
 
 ## 更新脚本
 
-使用 Tampermonkey 打开脚本管理面板，在对应脚本中粘贴最新版本源码并保存，然后刷新 GitHub 首页。
+打开仓库中的脚本文件页面并点击 `Raw`，按 Tampermonkey 安装页面提示完成更新；或者在脚本管理面板中打开对应脚本，粘贴最新版本源码并保存。完成后刷新 GitHub 首页。
