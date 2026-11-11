@@ -24,11 +24,11 @@
 ## 安装
 
 1. 在浏览器中安装 [Tampermonkey](https://www.tampermonkey.net/)（篡改猴）。
-2. 打开 [GitHubTopRepositoriesCustom.user.js](./GitHubTopRepositoriesCustom.user.js) 文件页面。
+2. 打开 [GitHubTopRepositoriesCustom.user.js](https://github.com/mojie126/GitHubTopRepoCustom/raw/refs/heads/main/GitHubTopRepositoriesCustom.user.js) 文件页面。
 3. 点击文件页面中的 `Raw`，打开以 `.user.js` 结尾的原始文件地址，浏览器已安装 Tampermonkey 时会自动触发脚本安装流程并显示安装页面。
 4. 确认脚本内容后点击“安装”，再打开或刷新 [GitHub 首页](https://github.com/)。
 
-也可以手动安装：在 Tampermonkey 控制面板中新建用户脚本，把 [GitHubTopRepositoriesCustom.user.js](https://github.com/mojie126/GitHubTopRepoCustom/raw/refs/heads/main/GitHubTopRepositoriesCustom.user.js) 的全部内容复制到编辑器中并保存，再刷新 GitHub 首页。点击文件名仅查看源码，不会触发安装，未安装 Tampermonkey 时点击 `Raw` 只会显示脚本文本。
+也可以手动安装：在 Tampermonkey 控制面板中新建用户脚本，把 [GitHubTopRepositoriesCustom.user.js](./GitHubTopRepositoriesCustom.user.js) 的全部内容复制到编辑器中并保存，再刷新 GitHub 首页。点击文件名仅查看源码，不会触发安装，未安装 Tampermonkey 时点击 `Raw` 只会显示脚本文本。
 
 ## 使用方法
 
