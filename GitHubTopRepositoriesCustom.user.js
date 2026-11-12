@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         GitHub Top repositories 自定义
 // @namespace    https://github.com/mojie126/GitHubTopRepositoriesCustom
-// @version      2.5.2
-// @description  自定义 GitHub 首页左侧 Top repositories 的仓库和排序，并支持搜索
+// @version      2.5.3
+// @description  自定义 GitHub 首页左侧 Top repositories 的仓库和排序，并固定顶部导航
 // @author       mojie126
 // @match        https://github.com/*
 // @grant        GM_getValue
@@ -1071,6 +1071,7 @@
    * @brief 扫描并更新 GitHub 卡片
    */
   function scan() {
+    injectStyles();
     const card = findRepositoryCard();
     if (!card) {
       return;
@@ -1078,7 +1079,6 @@
     if (!card.querySelector(`${NATIVE_LIST_SELECTOR}:not([data-gh-top-repositories-list])`)) {
       return;
     }
-    injectStyles();
     enhanceCard(card);
   }
 
